@@ -105,3 +105,6 @@ venv.bak/
 
 # pycharm config folder
 .idea/ 
+
+# virtual environment folder
+venv/
