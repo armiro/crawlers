@@ -6,8 +6,8 @@ import csv
 # import ast
 
 
-csv_path = "C://Users/arman/Desktop/data.csv"
-csv_file = open(csv_path, 'a', newline='')
+csv_path = "C://Users/arman/Desktop/Academia-Cafe-Data.csv"
+csv_file = open(csv_path, mode='a', newline='')
 
 # csv_file = pd.read_csv(csv_path)
 # column_keys = list(csv_file.columns)
@@ -19,6 +19,17 @@ driver.get(url=url)
 loop_interrupt = False
 
 while loop_interrupt is False:
+
+    # check whether the page is loaded completely or wait a little and try again!
+    loaded_page = False
+    logo_tag = driver.find_element_by_id("logo")
+    while loaded_page is False:
+        if logo_tag.size:
+            loaded_page = True
+        else:
+            print("current page is not loaded yet! check the net connectivity")
+            time.sleep(5)
+
     table = driver.find_element_by_xpath('//*[@class="items"]/tbody')
     rows = table.find_elements_by_xpath(".//tr")
 
@@ -88,7 +99,19 @@ while loop_interrupt is False:
         # visa = row_data[12]
         detail_button = row.find_element_by_css_selector("i.fa.fa-search")
         detail_button.click()
-        time.sleep(1.5)
+        time.sleep(1)
+
+        # check whether the modal box is loaded or wait a moment and try again!
+        modal_box_loaded = False
+        modal_title_tag = driver.find_element_by_id("details_view")
+        while modal_box_loaded is False:
+            modal_box_height = modal_title_tag.size['height']
+            if modal_box_height > 20:
+                modal_box_loaded = True
+            else:
+                print("modal box not opened yet! check the net connectivity!")
+                time.sleep(5)
+
         modal_box = driver.find_element_by_id("dlg-univs-applied-view")
         box_text = modal_box.text
         box_text = box_text.split("\n")
@@ -184,15 +207,15 @@ while loop_interrupt is False:
         btn = "button.ui-button.ui-widget.ui-state-default.ui-corner-all.ui-button-icon-only.ui-dialog-titlebar-close"
         close_button = driver.find_element_by_css_selector(btn)
         close_button.click()
-        time.sleep(1)
+        time.sleep(0.5)
 
-        this_record = [bsc_univ, bsc_major, bsc_avg, msc_univ, msc_major, msc_avg, toefl_or_ielts, gre_quant,
-                       gre_verbal,
+        this_record = [bsc_univ, bsc_major, bsc_avg, msc_univ, msc_major, msc_avg, toefl_or_ielts, gre_quant, gre_verbal,
                        gre_writing, total_papers, isi, international_papers, local_papers, academic_experience,
                        work_experience, result, major, got_fund, fund_amount, target_univ, field, country, year]
 
-        writer = csv.writer(csv_file)
+        writer = csv.writer(csv_file, delimiter=',', quotechar='"')
         writer.writerow(this_record)
+        csv_file.flush()
 
         # this_record = pd.DataFrame(this_record)
         # this_record.to_csv(csv_path, mode='a', index=False, columns=None)
@@ -202,12 +225,12 @@ while loop_interrupt is False:
 
     # noinspection PyBroadException
     if driver.find_elements_by_css_selector("li.next.hidden"):
-        print("uh! we've reached the end :)")
+        print("uh! we've reached the end :))")
         loop_interrupt = True
     else:
         next_btn = driver.find_element_by_class_name("next")
         next_btn.click()
-        time.sleep(5)
+        time.sleep(1)
 
 driver.close()
 csv_file.close()
