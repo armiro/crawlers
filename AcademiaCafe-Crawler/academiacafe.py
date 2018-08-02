@@ -5,7 +5,12 @@ import csv
 # import numpy as np
 # import ast
 
-csv_path = "C://Users/arman/Desktop/data.csv"
+
+csv_header = ["BSc University", "BSc Major", "BSc GPA", "MSc University", "MSc Major", "MSc GPA", "TOEFL/IELTS",
+              "GRE.Quant", "GRE.Verbal", "GRE.Writing", "Total Papers", "ISI", "International", "Local",
+              "Academic Experience", "Work Experience", "Accept?", "Major", "Fund?", "Fund Amount",
+              "Target University", "Field", "Country", "Year"]
+csv_path = "C://Users/arman/Desktop/crawlers/AcademiaCafe-Crawler/data.csv"
 this_url = "https://www.academiacafe.com/admission/index.php?r=univsApplied/index"
 long_delay = 5
 short_delay = 0.5
@@ -14,6 +19,7 @@ short_delay = 0.5
 def initialize_csv_reader(path):
     csv_file = open(path, mode='a', newline='')
     writer = csv.writer(csv_file, delimiter=',', quotechar='"')
+    writer.writerow(csv_header)
     return writer, csv_file
 
 
@@ -39,64 +45,97 @@ def check_page_loading(driver):
             time.sleep(long_delay)
 
 
-def find_bsc_data(element, box_text, bsc_avg):
-    if element.find("Bachelors ") != -1:
-        split_element = element.split()
-        bsc_major = ' '.join(split_element[2:])
-        bsc_univ = box_text[box_text.index(element) + 1]
-        gpa_field = box_text[box_text.index(element) + 2]
-        gpa_field = gpa_field.split()
-        if bsc_avg == "-":
-            bsc_avg = gpa_field[2]
+def find_bsc_data(box_text, bsc_avg):
+    for element in box_text:
+        if element.find("Bachelors ") != -1:
+            split_element = element.split()
+            bsc_major = ' '.join(split_element[2:])
+            bsc_univ = box_text[box_text.index(element) + 1]
+            gpa_field = box_text[box_text.index(element) + 2]
+            gpa_field = gpa_field.split()
+            if bsc_avg == "-":
+                bsc_avg = gpa_field[2]
+            else:
+                pass
+            return bsc_major, bsc_univ, bsc_avg
+
+
+def find_msc_data(box_text, msc_avg):
+    for element in box_text:
+        if element.find("Masters ") != -1:
+            split_element = element.split()
+            msc_major = ' '.join(split_element[2:])
+            msc_univ = box_text[box_text.index(element) + 1]
+            gpa_field = box_text[box_text.index(element) + 2]
+            gpa_field = gpa_field.split()
+            if msc_avg == "-":
+                msc_avg = gpa_field[2]
+            else:
+                pass
+            return msc_major, msc_univ, msc_avg
+
+
+def find_GRE_score(box_text):
+    for element in box_text:
+        if element.find("GRE General") != -1:
+            this_element = box_text[box_text.index(element) + 1]
+            this_element = this_element.split()[-1].split(",")
+            gre_quant = this_element[0]
+            gre_verbal = this_element[1]
+            gre_writing = this_element[2]
+            return gre_quant, gre_verbal, gre_writing
+
+
+def find_num_papers(box_text):
+
+    for element in box_text:
+        if element.find("Papers: ") != -1 or element.find("تعداد مقالات") != -1:
+            if element.find("International Journal Papers: ") != -1 or element.find(
+                    "تعداد مقالات ژورنال بین‌المللی:") != -1:
+                num_intl_journals = int(element.split()[-1])
+            elif element.find("International Conference/Workshop Papers: ") != -1 or element.find(
+                    "تعداد مقالات کنفرانس بین‌المللی:") != -1:
+                num_intl_confs = int(element.split()[-1])
+            elif element.find("Local Conference/Workshop Papers: ") != -1 or element.find(
+                    "تعداد مقالات کنفرانس داخلی:") != -1:
+                num_local_confs = int(element.split()[-1])
+            elif element.find("Local Journal Papers: ") != -1 or element.find(
+                    "تعداد مقالات ژورنال داخلی:") != -1:
+                num_local_journals = int(element.split()[-1])
+
+        # noinspection PyBroadException
+    try:
+        total_papers = num_local_confs + num_local_journals + num_intl_journals + num_intl_confs
+        international_papers = num_intl_journals + num_intl_confs
+        local_papers = num_local_confs + num_local_journals
+        return total_papers, international_papers, local_papers
+    except:
+        pass
+
+
+def find_work_experience(box_text):
+
+    for element in box_text:
+        if element.find("Work Experience: ") != -1 or element.find("سابقه کار:") != -1:
+            this_element = box_text[box_text.index(element)]
+            for word in this_element.split():
+                if word.isdigit():
+                    work_experience = word
+                    return work_experience
+                    # break
+
+
+def find_isi(box_text):
+    for element in box_text:
+        if element.find("ISI") != -1 or element.find("isi") != -1:
+            isi = 1
         else:
-            pass
-        return bsc_major, bsc_univ, bsc_avg
-
-
-def find_msc_data(element, box_text, msc_avg):
-    if element.find("Masters ") != -1:
-        split_element = element.split()
-        msc_major = ' '.join(split_element[2:])
-        msc_univ = box_text[box_text.index(element) + 1]
-        gpa_field = box_text[box_text.index(element) + 2]
-        gpa_field = gpa_field.split()
-        if msc_avg == "-":
-            msc_avg = gpa_field[2]
-        else:
-            pass
-        return msc_major, msc_univ, msc_avg
-
-
-def find_GRE_score(element, box_text):
-    if element.find("GRE General") != -1:
-        this_element = box_text[box_text.index(element) + 1]
-        this_element = this_element.split()[-1].split(",")
-        gre_quant = this_element[0]
-        gre_verbal = this_element[1]
-        gre_writing = this_element[2]
-        return gre_quant, gre_verbal, gre_writing
-
-
-def find_work_experience(element, box_text):
-    if element.find("Work Experience: ") != -1 or element.find("سابقه کار:") != -1:
-        this_element = box_text[box_text.index(element)]
-        # print(this_element)
-        for word in this_element.split():
-            if word.isdigit():
-                work_experience = word
-                return work_experience
-                # break
-
-
-def find_isi(element):
-    if element.find("ISI") != -1 or element.find("isi") != -1:
-        isi = 1
-    else:
-        isi = 0
-    return isi
+            isi = 0
+        return isi
 
 
 def check_modal_box_loading(driver):
+
     modal_box_loaded = False
     modal_title_tag = driver.find_element_by_id("details_view")
     while modal_box_loaded is False:
@@ -228,53 +267,29 @@ def main():
             gre_quant = '-'
             gre_verbal = '-'
             gre_writing = '-'
-            total_papers = 0
-            international_papers = 0
-            local_papers = 0
-            work_experience = 0
             academic_experience = 0
-            isi = 0
 
-            for element in box_text:
+            # noinspection PyBroadException
+            try:
+                bsc_major, bsc_univ, bsc_avg = find_bsc_data(box_text=box_text, bsc_avg=bsc_avg)
+            except Exception:
+                pass
+            # noinspection PyBroadException
+            try:
+                msc_major, msc_univ, msc_avg = find_msc_data(box_text=box_text, msc_avg=msc_avg)
+            except Exception:
+                pass
+            # noinspection PyBroadException
+            try:
+                gre_quant, gre_verbal, gre_writing = find_GRE_score(box_text=box_text)
+            except Exception:
+                pass
 
-                try:
-                    bsc_major, bsc_univ, bsc_avg = find_bsc_data(element=element, box_text=box_text, bsc_avg=bsc_avg)
-                except:
-                    pass
-                try:
-                    msc_major, msc_univ, msc_avg = find_msc_data(element=element, box_text=box_text, msc_avg=msc_avg)
-                except:
-                    pass
-                try:
-                    gre_quant, gre_verbal, gre_writing = find_GRE_score(element=element, box_text=box_text)
-                except:
-                    pass
+            total_papers, international_papers, local_papers = find_num_papers(box_text=box_text)
 
-                if element.find("Papers: ") != -1 or element.find("تعداد مقالات") != -1:
-                    if element.find("International Journal Papers: ") != -1 or element.find(
-                            "تعداد مقالات ژورنال بین‌المللی:") != -1:
-                        num_intl_journals = int(element.split()[-1])
-                    elif element.find("International Conference/Workshop Papers: ") != -1 or element.find(
-                            "تعداد مقالات کنفرانس بین‌المللی:") != -1:
-                        num_intl_confs = int(element.split()[-1])
-                    elif element.find("Local Conference/Workshop Papers: ") != -1 or element.find(
-                            "تعداد مقالات کنفرانس داخلی:") != -1:
-                        num_local_confs = int(element.split()[-1])
-                    elif element.find("Local Journal Papers: ") != -1 or element.find(
-                            "تعداد مقالات ژورنال داخلی:") != -1:
-                        num_local_journals = int(element.split()[-1])
+            work_experience = find_work_experience(box_text=box_text)
 
-                # noinspection PyBroadException
-                try:
-                    total_papers = num_local_confs + num_local_journals + num_intl_journals + num_intl_confs
-                    international_papers = num_intl_journals + num_intl_confs
-                    local_papers = num_local_confs + num_local_journals
-                except Exception:
-                    pass
-
-                work_experience = find_work_experience(element=element, box_text=box_text)
-
-                isi = find_isi(element=element)
+            isi = find_isi(box_text=box_text)
 
             close_modal_box(driver=driver)
 
@@ -285,7 +300,6 @@ def main():
 
             append_to_csv(record=this_record, csv_file=csv_file, writer=writer)
 
-        # noinspection PyBroadException
         if driver.find_elements_by_css_selector("li.next.hidden"):
             print("uh! we've reached the end :))")
             loop_interrupt = True
