@@ -1,7 +1,27 @@
 from selenium import webdriver
 import time
+import csv
 
-url = 'https://www.spritmonitor.de/en/detail/837614.html'
+
+csv_header = ['manufacturer', 'model', 'version', 'fuel_date', 'odometer', 'trip_distance', 'quantity', 'fuel_type',
+              'tire_type', 'city', 'motor_way', 'country_roads', 'driving_style', 'consumption', 'fuel_note']
+csv_path = "C://Users/arman/Desktop/crawlers/SpritMonitor-Crawler/data.csv"
+
+
+def initialize_csv_reader(path):
+    csv_file = open(path, mode='a', newline='')
+    writer = csv.writer(csv_file, delimiter=',', quotechar='"')
+    writer.writerow(csv_header)
+    return writer, csv_file
+
+
+def append_to_csv(record, csv_file, writer):
+    writer.writerow(record)
+    csv_file.flush()
+
+
+writer, csv_file = initialize_csv_reader(path=csv_path)
+url = 'https://www.spritmonitor.de/en/detail/804546.html'
 driver = webdriver.Chrome(keep_alive=True)
 driver.get(url=url)
 
@@ -27,6 +47,10 @@ for row in rows:
     else:
         fuel_date = None
     print("fuel_date is:", fuel_date)
+
+    # check whether this is a fueling record, or go to the next record directly
+    if fuel_date is None:
+        continue
 
     if features[1].get_attribute(name="class") == "fuelkmpos":
         odometer = features[1].text
@@ -100,13 +124,28 @@ for row in rows:
 
     if features[10].get_attribute(name="class") == "fuelnote":
         try:
-            fuel_note_img = features[10].find_element_by_xpath(xpath=".//img")
-            fuel_note = fuel_note_img.get_attribute(name="onmouseover").split("'")[1]
+            fuel_note_imgs = features[10].find_elements_by_xpath(xpath=".//img")
+            for fuel_note_img in fuel_note_imgs:
+                if fuel_note_img.get_attribute(name='alt') == 'Bordcomputer':
+                    bordcomputer = fuel_note_img.get_attribute(name="onmouseover").split("'")[1]
+                    words = bordcomputer.split()
+                    for word in words:
+                        if word.find("Consumption") != -1:
+                            idx = words.index(word)
+                            consumption = words[idx + 1]
+                        if word.find("Quantity") != -1:
+                            idx = words.index(word)
+                            quantity = words[idx + 1]
+                else:
+                    fuel_note = fuel_note_img.get_attribute(name="onmouseover").split("'")[1]
         except:
             fuel_note = None
     else:
         fuel_note = None
     print("fuel note is:", fuel_note)
 
+    this_record = [manufacturer, model, version, fuel_date, odometer, distance, quantity, fuel_type, tire_type, city,
+                   motor_way, country_roads, style, consumption, fuel_note]
 
+    append_to_csv(record=this_record, csv_file=csv_file, writer=writer)
 
