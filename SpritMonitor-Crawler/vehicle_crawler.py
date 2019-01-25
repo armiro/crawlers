@@ -4,7 +4,7 @@ import csv
 
 
 csv_header = ['manufacturer', 'model', 'version', 'fuel_date', 'odometer', 'trip_distance', 'quantity', 'fuel_type',
-              'tire_type', 'city', 'motor_way', 'country_roads', 'driving_style', 'consumption', 'fuel_note']
+              'tire_type', 'city', 'motor_way', 'country_roads', 'driving_style', 'consumption', 'fuel_notes']
 csv_path = "C://Users/arman/Desktop/crawlers/SpritMonitor-Crawler/data.csv"
 
 
@@ -125,6 +125,7 @@ for row in rows:
     if features[10].get_attribute(name="class") == "fuelnote":
         try:
             fuel_note_imgs = features[10].find_elements_by_xpath(xpath=".//img")
+            fuel_notes = list()
             for fuel_note_img in fuel_note_imgs:
                 if fuel_note_img.get_attribute(name='alt') == 'Bordcomputer':
                     bordcomputer = fuel_note_img.get_attribute(name="onmouseover").split("'")[1]
@@ -133,19 +134,21 @@ for row in rows:
                         if word.find("Consumption") != -1:
                             idx = words.index(word)
                             consumption = words[idx + 1]
-                        if word.find("Quantity") != -1:
+                        elif word.find("Quantity") != -1:
                             idx = words.index(word)
                             quantity = words[idx + 1]
+                        else:
+                            pass
                 else:
-                    fuel_note = fuel_note_img.get_attribute(name="onmouseover").split("'")[1]
+                    fuel_notes.append(fuel_note_img.get_attribute(name="onmouseover").split("'")[1])
         except:
-            fuel_note = None
+            fuel_notes = None
     else:
-        fuel_note = None
-    print("fuel note is:", fuel_note)
+        fuel_notes = None
+    print("fuel note is:", fuel_notes)
 
     this_record = [manufacturer, model, version, fuel_date, odometer, distance, quantity, fuel_type, tire_type, city,
-                   motor_way, country_roads, style, consumption, fuel_note]
+                   motor_way, country_roads, style, consumption, fuel_notes]
 
     append_to_csv(record=this_record, csv_file=csv_file, writer=writer)
 
