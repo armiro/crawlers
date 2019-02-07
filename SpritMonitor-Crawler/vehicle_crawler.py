@@ -3,8 +3,9 @@ import time
 import csv
 
 
-csv_header = ['manufacturer', 'model', 'version', 'fuel_date', 'odometer', 'trip_distance', 'quantity', 'fuel_type',
-              'tire_type', 'city', 'motor_way', 'country_roads', 'driving_style', 'consumption', 'fuel_notes']
+csv_header = ['manufacturer', 'model', 'version', 'power(kW)', 'fuel_date', 'odometer', 'trip_distance(km)',
+              'quantity(kWh)', 'fuel_type', 'tire_type', 'city', 'motor_way', 'country_roads', 'driving_style',
+              'consumption(kWh/100km)', 'A/C', 'park_heating', 'avg_speed(km/h)', 'fuel_note']
 csv_path = "C://Users/arman/Desktop/crawlers/SpritMonitor-Crawler/data.csv"
 
 
@@ -34,6 +35,16 @@ vehicle = vehicle.split(sep="-")
 manufacturer = vehicle[0].strip()
 model = vehicle[1].strip()
 version = vehicle[2].strip()
+
+engine_power = None
+try:
+    vehicle_detail = str(details.find_element_by_xpath(xpath="//font").text).split()
+    for word in range(0, len(vehicle_detail) - 1):
+        if vehicle_detail[word] == "kW":
+            engine_power = vehicle_detail[word - 1]
+except:
+    pass
+
 
 table = driver.find_element_by_xpath(xpath="//table[@class='itemtable']/tbody")
 rows = table.find_elements_by_xpath(xpath=".//tr")
@@ -122,6 +133,8 @@ for row in rows:
         consumption = None
     print("consumption is:", consumption)
 
+    avg_speed = None
+    AC = park_heating = 0
     if features[10].get_attribute(name="class") == "fuelnote":
         try:
             fuel_note_imgs = features[10].find_elements_by_xpath(xpath=".//img")
@@ -137,8 +150,15 @@ for row in rows:
                         elif word.find("Quantity") != -1:
                             idx = words.index(word)
                             quantity = words[idx + 1]
+                        elif word.find("Avg speed") != -1:
+                            idx = words.index(word)
+                            avg_speed = words[idx + 1]
                         else:
                             pass
+                elif fuel_note_img.get_attribute(name='alt') == 'A/C':
+                    AC = 1
+                elif fuel_note_img.get_attribute(name='alt') == 'Park heating':
+                    park_heating = 1
                 else:
                     fuel_notes.append(fuel_note_img.get_attribute(name="onmouseover").split("'")[1])
         except:
@@ -147,8 +167,9 @@ for row in rows:
         fuel_notes = None
     print("fuel note is:", fuel_notes)
 
-    this_record = [manufacturer, model, version, fuel_date, odometer, distance, quantity, fuel_type, tire_type, city,
-                   motor_way, country_roads, style, consumption, fuel_notes]
+    this_record = [manufacturer, model, version, engine_power, fuel_date, odometer, distance, quantity,
+                   fuel_type, tire_type, city, motor_way, country_roads, style, consumption, AC, park_heating,
+                   avg_speed, fuel_notes]
 
     append_to_csv(record=this_record, csv_file=csv_file, writer=writer)
 
