@@ -22,7 +22,7 @@ def append_to_csv(record, csv_file, writer):
 
 
 writer, csv_file = initialize_csv_reader(path=csv_path)
-url = 'https://www.spritmonitor.de/en/detail/679341.html'
+url = 'https://www.spritmonitor.de/en/detail/795710.html'
 driver = webdriver.Chrome(keep_alive=True)
 driver.get(url=url)
 
@@ -46,131 +46,144 @@ except:
     pass
 
 
-table = driver.find_element_by_xpath(xpath="//table[@class='itemtable']/tbody")
-rows = table.find_elements_by_xpath(xpath=".//tr")
-# print(rows[0].get_attribute(name="innerHTML"))
+page_number = 1
+while 1:
+    this_page = (url + '?page=%d') % page_number
+    driver.get(url=this_page)
 
-for row in rows:
-    features = row.find_elements_by_xpath(xpath=".//td")
+    try:
+        table = driver.find_element_by_xpath(xpath="//table[@class='itemtable']/tbody")
+        rows = table.find_elements_by_xpath(xpath=".//tr")
+        # print(rows[0].get_attribute(name="innerHTML"))
+    except:
+        print("we have reached the end!")
+        driver.close()
+        exit()
 
-    if features[0].get_attribute(name="class") == "fueldate":
-        fuel_date = features[0].text
-    else:
-        fuel_date = None
-    print("fuel_date is:", fuel_date)
+    for row in rows:
+        features = row.find_elements_by_xpath(xpath=".//td")
 
-    # check whether this is a fueling record, or go to the next record directly
-    if fuel_date is None:
-        continue
+        if features[0].get_attribute(name="class") == "fueldate":
+            fuel_date = features[0].text
+        else:
+            fuel_date = None
+        print("fuel_date is:", fuel_date)
 
-    if features[1].get_attribute(name="class") == "fuelkmpos":
-        odometer = features[1].text
-    else:
-        odometer = None
-    print("odometer is:", odometer)
+        # check whether this is a fueling record, or go to the next record directly
+        if fuel_date is None:
+            continue
 
-    if features[2].get_attribute(name="class") == "trip":
-        distance = features[2].text
-    else:
-        distance = None
-    print("trip distance is:", distance)
+        if features[1].get_attribute(name="class") == "fuelkmpos":
+            odometer = features[1].text
+        else:
+            odometer = None
+        print("odometer is:", odometer)
 
-    if features[3].get_attribute(name="class") == "quantity":
-        quantity = features[3].text
-    else:
-        quantity = None
-    print("quantity is:", quantity)
+        if features[2].get_attribute(name="class") == "trip":
+            distance = features[2].text
+        else:
+            distance = None
+        print("trip distance is:", distance)
 
-    if features[4].get_attribute(name="class") == "fuelsort":
-        fuel_type = features[4].get_attribute(name="onmouseover").split(sep="'")[1]
-    else:
-        fuel_type = None
-    print("fuel type is:", fuel_type)
+        if features[3].get_attribute(name="class") == "quantity":
+            quantity = features[3].text
+        else:
+            quantity = None
+        print("quantity is:", quantity)
 
-    if features[5].get_attribute(name="class") == "tire":
-        try:
-            tire_img = features[5].find_element_by_xpath(xpath=".//img")
-            tire_type = tire_img.get_attribute(name="onmouseover").split(sep="'")[1]
-        except:
+        if features[4].get_attribute(name="class") == "fuelsort":
+            fuel_type = features[4].get_attribute(name="onmouseover").split(sep="'")[1]
+        else:
+            fuel_type = None
+        print("fuel type is:", fuel_type)
+
+        if features[5].get_attribute(name="class") == "tire":
+            try:
+                tire_img = features[5].find_element_by_xpath(xpath=".//img")
+                tire_type = tire_img.get_attribute(name="onmouseover").split(sep="'")[1]
+            except:
+                tire_type = None
+        else:
             tire_type = None
-    else:
-        tire_type = None
-    print("tire type is:", tire_type)
+        print("tire type is:", tire_type)
 
-    if features[6].get_attribute(name="class") == "street":
-        try:
-            street_imgs = features[6].find_elements_by_xpath(xpath=".//img")
-            city = country_roads = motor_way = 0
-            for street_img in street_imgs:
-                if street_img.get_attribute(name="onmouseover").split(sep="'")[1] == 'City':
-                    city = 1
-                if street_img.get_attribute(name="onmouseover").split(sep="'")[1] == 'Motor-way':
-                    motor_way = 1
-                if street_img.get_attribute(name="onmouseover").split(sep="'")[1] == 'Country roads':
-                    country_roads = 1
-        except:
+        if features[6].get_attribute(name="class") == "street":
+            try:
+                street_imgs = features[6].find_elements_by_xpath(xpath=".//img")
+                city = country_roads = motor_way = 0
+                for street_img in street_imgs:
+                    if street_img.get_attribute(name="onmouseover").split(sep="'")[1] == 'City':
+                        city = 1
+                    if street_img.get_attribute(name="onmouseover").split(sep="'")[1] == 'Motor-way':
+                        motor_way = 1
+                    if street_img.get_attribute(name="onmouseover").split(sep="'")[1] == 'Country roads':
+                        country_roads = 1
+            except:
+                city = country_roads = motor_way = None
+        else:
             city = country_roads = motor_way = None
-    else:
-        city = country_roads = motor_way = None
-    print("streets are:", motor_way, city, country_roads)
+        print("streets are:", motor_way, city, country_roads)
 
-    if features[7].get_attribute(name="class") == "style":
-        try:
-            style_img = features[7].find_element_by_xpath(xpath=".//img")
-            style = style_img.get_attribute(name="onmouseover").split(sep="'")[1]
-        except:
+        if features[7].get_attribute(name="class") == "style":
+            try:
+                style_img = features[7].find_element_by_xpath(xpath=".//img")
+                style = style_img.get_attribute(name="onmouseover").split(sep="'")[1]
+            except:
+                style = None
+        else:
             style = None
-    else:
-        style = None
-    print("driving style is:", style)
+        print("driving style is:", style)
 
-    if features[9].get_attribute(name="class") == "consumption":
-        try:
-            consumption = features[9].get_attribute(name="onmouseover").split("'")[1].split(" ")[0]
-        except:
+        if features[9].get_attribute(name="class") == "consumption":
+            try:
+                consumption = features[9].get_attribute(name="onmouseover").split("'")[1].split(" ")[0]
+            except:
+                consumption = None
+        else:
             consumption = None
-    else:
-        consumption = None
-    print("consumption is:", consumption)
+        print("consumption is:", consumption)
 
-    avg_speed = None
-    AC = park_heating = 0
-    fuel_note = None
-    if features[10].get_attribute(name="class") == "fuelnote":
-        try:
-            fuel_note_imgs = features[10].find_elements_by_xpath(xpath=".//img")
-
-            for fuel_note_img in fuel_note_imgs:
-                if fuel_note_img.get_attribute(name='alt') == 'Bordcomputer':
-                    bordcomputer = fuel_note_img.get_attribute(name="onmouseover").split("'")[1]
-                    words = bordcomputer.split()
-                    for word in words:
-                        if word.find("Consumption") != -1:
-                            idx = words.index(word)
-                            consumption = words[idx + 1]
-                        elif word.find("Quantity") != -1:
-                            idx = words.index(word)
-                            quantity = words[idx + 1]
-                        elif word.find("speed") != -1:
-                            idx = words.index(word)
-                            avg_speed = words[idx + 1]
-                        else:
-                            pass
-                elif fuel_note_img.get_attribute(name='alt') == 'A/C':
-                    AC = 1
-                elif fuel_note_img.get_attribute(name='alt') == 'Park heating':
-                    park_heating = 1
-                else:
-                    fuel_note = fuel_note_img.get_attribute(name="onmouseover").split("'")[1]
-        except:
-            fuel_note = None
-    else:
+        avg_speed = None
+        AC = park_heating = 0
         fuel_note = None
-    print("fuel note is:", fuel_note)
+        if features[10].get_attribute(name="class") == "fuelnote":
+            try:
+                fuel_note_imgs = features[10].find_elements_by_xpath(xpath=".//img")
 
-    this_record = [manufacturer, model, version, engine_power, fuel_date, odometer, distance, quantity,
-                   fuel_type, tire_type, city, motor_way, country_roads, style, consumption, AC, park_heating,
-                   avg_speed, fuel_note]
+                for fuel_note_img in fuel_note_imgs:
+                    if fuel_note_img.get_attribute(name='alt') == 'Bordcomputer':
+                        bordcomputer = fuel_note_img.get_attribute(name="onmouseover").split("'")[1]
+                        words = bordcomputer.split()
+                        for word in words:
+                            if word.find("Consumption") != -1:
+                                idx = words.index(word)
+                                consumption = words[idx + 1]
+                            elif word.find("Quantity") != -1:
+                                idx = words.index(word)
+                                quantity = words[idx + 1]
+                            elif word.find("speed") != -1:
+                                idx = words.index(word)
+                                avg_speed = words[idx + 1]
+                            else:
+                                pass
+                    elif fuel_note_img.get_attribute(name='alt') == 'A/C':
+                        AC = 1
+                    elif fuel_note_img.get_attribute(name='alt') == 'Park heating':
+                        park_heating = 1
+                    else:
+                        fuel_note = fuel_note_img.get_attribute(name="onmouseover").split("'")[1]
+            except:
+                fuel_note = None
+        else:
+            fuel_note = None
+        print("fuel note is:", fuel_note)
 
-    append_to_csv(record=this_record, csv_file=csv_file, writer=writer)
+        this_record = [manufacturer, model, version, engine_power, fuel_date, odometer, distance, quantity,
+                       fuel_type, tire_type, city, motor_way, country_roads, style, consumption, AC, park_heating,
+                       avg_speed, fuel_note]
+
+        append_to_csv(record=this_record, csv_file=csv_file, writer=writer)
+
+    page_number += 1
+
 
