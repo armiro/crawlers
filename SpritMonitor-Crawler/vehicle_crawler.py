@@ -22,7 +22,7 @@ def append_to_csv(record, csv_file, writer):
 
 
 writer, csv_file = initialize_csv_reader(path=csv_path)
-url = 'https://www.spritmonitor.de/en/detail/804546.html'
+url = 'https://www.spritmonitor.de/en/detail/679341.html'
 driver = webdriver.Chrome(keep_alive=True)
 driver.get(url=url)
 
@@ -30,7 +30,7 @@ time.sleep(2.)
 
 details = driver.find_element_by_id(id_="vehicledetails")
 vehicle = str(details.find_element_by_xpath(xpath="//h1").text)
-vehicle = vehicle.split(sep="-")
+vehicle = vehicle.split(sep=" - ")
 
 manufacturer = vehicle[0].strip()
 model = vehicle[1].strip()
@@ -38,10 +38,10 @@ version = vehicle[2].strip()
 
 engine_power = None
 try:
-    vehicle_detail = str(details.find_element_by_xpath(xpath="//font").text).split()
-    for word in range(0, len(vehicle_detail) - 1):
-        if vehicle_detail[word] == "kW":
-            engine_power = vehicle_detail[word - 1]
+    details_txt = str(details.text).split()
+    for word in range(0, len(details_txt) - 1):
+        if details_txt[word] == "kW":
+            engine_power = details_txt[word - 1]
 except:
     pass
 
@@ -135,10 +135,11 @@ for row in rows:
 
     avg_speed = None
     AC = park_heating = 0
+    fuel_note = None
     if features[10].get_attribute(name="class") == "fuelnote":
         try:
             fuel_note_imgs = features[10].find_elements_by_xpath(xpath=".//img")
-            fuel_notes = list()
+
             for fuel_note_img in fuel_note_imgs:
                 if fuel_note_img.get_attribute(name='alt') == 'Bordcomputer':
                     bordcomputer = fuel_note_img.get_attribute(name="onmouseover").split("'")[1]
@@ -150,7 +151,7 @@ for row in rows:
                         elif word.find("Quantity") != -1:
                             idx = words.index(word)
                             quantity = words[idx + 1]
-                        elif word.find("Avg speed") != -1:
+                        elif word.find("speed") != -1:
                             idx = words.index(word)
                             avg_speed = words[idx + 1]
                         else:
@@ -160,16 +161,16 @@ for row in rows:
                 elif fuel_note_img.get_attribute(name='alt') == 'Park heating':
                     park_heating = 1
                 else:
-                    fuel_notes.append(fuel_note_img.get_attribute(name="onmouseover").split("'")[1])
+                    fuel_note = fuel_note_img.get_attribute(name="onmouseover").split("'")[1]
         except:
-            fuel_notes = None
+            fuel_note = None
     else:
-        fuel_notes = None
-    print("fuel note is:", fuel_notes)
+        fuel_note = None
+    print("fuel note is:", fuel_note)
 
     this_record = [manufacturer, model, version, engine_power, fuel_date, odometer, distance, quantity,
                    fuel_type, tire_type, city, motor_way, country_roads, style, consumption, AC, park_heating,
-                   avg_speed, fuel_notes]
+                   avg_speed, fuel_note]
 
     append_to_csv(record=this_record, csv_file=csv_file, writer=writer)
 
