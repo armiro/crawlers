@@ -5,8 +5,8 @@ import csv
 
 csv_header = ['manufacturer', 'model', 'version', 'power(kW)', 'fuel_date', 'odometer', 'trip_distance(km)',
               'quantity(kWh)', 'fuel_type', 'tire_type', 'city', 'motor_way', 'country_roads', 'driving_style',
-              'consumption(kWh/100km)', 'A/C', 'park_heating', 'avg_speed(km/h)', 'fuel_note']
-csv_path = "C://Users/arman/Desktop/crawlers/SpritMonitor-Crawler/data.csv"
+              'consumption(kWh/100km)', 'A/C', 'park_heating', 'avg_speed(km/h)', 'ecr_deviation', 'fuel_note']
+csv_path = "C://Users/arman/Desktop/crawlers/SpritMonitor-Crawler/volkswagen_e_golf.csv"
 
 
 def initialize_csv_reader(path):
@@ -22,7 +22,8 @@ def append_to_csv(record, csv_file, writer):
 
 
 writer, csv_file = initialize_csv_reader(path=csv_path)
-url = 'https://www.spritmonitor.de/en/detail/795710.html'
+url = 'https://www.spritmonitor.de/en/detail/861231.html'
+manufacturer_ecr = 16.8
 driver = webdriver.Chrome(keep_alive=True)
 driver.get(url=url)
 
@@ -75,18 +76,30 @@ while 1:
 
         if features[1].get_attribute(name="class") == "fuelkmpos":
             odometer = features[1].text
+            if odometer.find('.') != -1:
+                odometer = int(float(odometer) * 1000)
+            else:
+                pass
         else:
             odometer = None
         print("odometer is:", odometer)
 
         if features[2].get_attribute(name="class") == "trip":
             distance = features[2].text
+            try:
+                distance = float(distance.replace(',', '.'))
+            except:
+                pass
         else:
             distance = None
         print("trip distance is:", distance)
 
         if features[3].get_attribute(name="class") == "quantity":
             quantity = features[3].text
+            try:
+                quantity = float(quantity.replace(',', '.'))
+            except:
+                pass
         else:
             quantity = None
         print("quantity is:", quantity)
@@ -137,6 +150,7 @@ while 1:
         if features[9].get_attribute(name="class") == "consumption":
             try:
                 consumption = features[9].get_attribute(name="onmouseover").split("'")[1].split(" ")[0]
+                consumption = float(consumption.replace(',', '.'))
             except:
                 consumption = None
         else:
@@ -158,12 +172,15 @@ while 1:
                             if word.find("Consumption") != -1:
                                 idx = words.index(word)
                                 consumption = words[idx + 1]
+                                consumption = float(consumption.replace(',', '.'))
                             elif word.find("Quantity") != -1:
                                 idx = words.index(word)
                                 quantity = words[idx + 1]
+                                quantity = float(quantity.replace(',', '.'))
                             elif word.find("speed") != -1:
                                 idx = words.index(word)
                                 avg_speed = words[idx + 1]
+                                avg_speed = float(avg_speed.replace(',', '.'))
                             else:
                                 pass
                     elif fuel_note_img.get_attribute(name='alt') == 'A/C':
@@ -178,9 +195,16 @@ while 1:
             fuel_note = None
         print("fuel note is:", fuel_note)
 
+        # calculate the energy consumption rate deviation
+        try:
+            ecr_deviation = consumption - manufacturer_ecr
+            print("ECR deviation is:", ecr_deviation)
+        except:
+            ecr_deviation = None
+
         this_record = [manufacturer, model, version, engine_power, fuel_date, odometer, distance, quantity,
                        fuel_type, tire_type, city, motor_way, country_roads, style, consumption, AC, park_heating,
-                       avg_speed, fuel_note]
+                       avg_speed, ecr_deviation, fuel_note]
 
         append_to_csv(record=this_record, csv_file=csv_file, writer=writer)
 
