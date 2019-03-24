@@ -22,9 +22,10 @@ def append_to_csv(record, csv_file, writer):
 
 
 # put your target vehicle's URL here (e.g. url = 'https://www.spritmonitor.de/en/detail/861231.html')
-url = 'https://www.spritmonitor.de/en/detail/731027.html'
-# rewrite the manufacturer's defined electricity consumption rate (e.g. manufacturer_ecr = 16.8)
-manufacturer_ecr = 14.1
+url = 'https://www.spritmonitor.de/en/detail/786327.html'
+# rewrite the factory's defined energy consumption rate (e.g. manufacturer_ecr = 16.8)
+# this may change for different year-models for the same type of car
+manufacturer_ecr = 12.7
 
 writer, csv_file = initialize_csv_reader(path=csv_path)
 driver = webdriver.Chrome(keep_alive=True)
