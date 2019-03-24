@@ -6,7 +6,7 @@ import csv
 csv_header = ['manufacturer', 'model', 'version', 'power(kW)', 'fuel_date', 'odometer', 'trip_distance(km)',
               'quantity(kWh)', 'fuel_type', 'tire_type', 'city', 'motor_way', 'country_roads', 'driving_style',
               'consumption(kWh/100km)', 'A/C', 'park_heating', 'avg_speed(km/h)', 'ecr_deviation', 'fuel_note']
-csv_path = "C://Users/arman/Desktop/crawlers/SpritMonitor-Crawler/volkswagen_e_golf.csv"
+csv_path = "./test_data.csv"
 
 
 def initialize_csv_reader(path):
@@ -21,9 +21,12 @@ def append_to_csv(record, csv_file, writer):
     csv_file.flush()
 
 
+# put your target vehicle's URL here (e.g. url = 'https://www.spritmonitor.de/en/detail/861231.html')
+url = 'https://www.spritmonitor.de/en/detail/731027.html'
+# rewrite the manufacturer's defined electricity consumption rate (e.g. manufacturer_ecr = 16.8)
+manufacturer_ecr = 14.1
+
 writer, csv_file = initialize_csv_reader(path=csv_path)
-url = 'https://www.spritmonitor.de/en/detail/861231.html'
-manufacturer_ecr = 16.8
 driver = webdriver.Chrome(keep_alive=True)
 driver.get(url=url)
 
