@@ -1,0 +1,3 @@
+selenium==4.20.0
+scholarly==1.7.11
+pycountry==23.12.11
