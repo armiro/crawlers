@@ -1,6 +1,6 @@
 import csv
-import pandas as pd
 import pycountry
+import logging
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -10,26 +10,32 @@ from selenium.webdriver.support import expected_conditions as EC
 from scholarly import scholarly, ProxyGenerator
 
 
-COUNTRY_NAME = 'Canada'
-NUM_RESULTS = 50
 CSV_FILE_PATH = './university_data.csv'
-CSV_HEADER = ['GUID', 'Name', 'Research Interests', 'University', 'University Field', 'Num Citations']
+CSV_HEADER = ['GUID', 'Name', 'Research Interests', 'University', 'Num Citations']
+COUNTRY_NAME = 'Canada'
+NUM_RESULTS = 5  # top ranked universities to crawl
+NUM_RESEARCHERS = 25  # top cited researchers to crawl
+PROXY_IP = '23.23.23.23:3128'  # proxy ip for selenium driver
+
+logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s', level=logging.INFO)
+scholarly.logger.setLevel(level='CRITICAL')  # prevent scholarly logger from info logs
+logging.getLogger('httpx').setLevel(logging.CRITICAL)  # scholarly shifted from requests to httpx
 
 
 def initialize_csv_writer(path):
-    csv_file = open(path, mode='w', newline='', encoding='utf-8')
+    csv_file = open(path, mode='a+', newline='', encoding='utf-8-sig')  # encoding must handle special chars
     writer = csv.writer(csv_file, delimiter=',', quotechar='"')
     writer.writerow(CSV_HEADER)
     return writer, csv_file
 
 
-def initialize_driver():
+def initialize_driver(use_proxy=False, proxy_ip=PROXY_IP):
     chrome_options = Options()
     chrome_options.add_argument('--headless')
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
-    # proxy = "23.23.23.23:3128"
-    # chrome_options.add_argument('--proxy-server=%s' % proxy)
+    if use_proxy:
+        chrome_options.add_argument('--proxy-server=%s' % proxy_ip)
     driver = webdriver.Chrome(options=chrome_options)
     return driver
 
@@ -62,29 +68,34 @@ def initialize_scholarly_proxy():
 
 
 def main():
-    driver = initialize_driver()
+    driver = initialize_driver(use_proxy=False)
+    logging.info('finding top %d universities in %s', NUM_RESULTS, COUNTRY_NAME)
     universities = get_top_universities_of(country=COUNTRY_NAME, topn=NUM_RESULTS, driver=driver)
-    print(universities)
-    initialize_scholarly_proxy()
-    univ_id = scholarly.search_org(name=universities[0])[0]['id']
-    univ_researchers = scholarly.search_author_by_organization(organization_id=int(univ_id))
-    print(f'{universities[0]} has an ID of {univ_id}')
+    # universities = ['University of Toronto']
 
+    logging.info(universities)
+    initialize_scholarly_proxy()
     writer, csv_file = initialize_csv_writer(path=CSV_FILE_PATH)
 
-    idx = 0
-    for researcher in univ_researchers:
-        idx += 1
-        if idx == 30: break
-        if researcher['interests']:
-            guid = researcher['scholar_id']
-            name = researcher['name']
-            # affiliation = researcher['affiliation']
-            research_interests = researcher['interests']
-            num_citations = researcher['citedby']
+    for university in universities:
+        univ_id = scholarly.search_org(name=university)[0]['id']
+        logging.info('%s has an ID of %s', university, univ_id)
+        univ_researchers = scholarly.search_author_by_organization(organization_id=int(univ_id))
+        logging.info('university researchers found ...')
 
-            writer.writerow([guid, name, research_interests, universities[0], None, num_citations])
+        counter = 0
+        for researcher in univ_researchers:
+            if counter == NUM_RESEARCHERS: break
+            if researcher['interests']:
+                counter += 1
+                guid = researcher['scholar_id']
+                name = researcher['name']
+                # affiliation = researcher['affiliation']
+                research_interests = ', '.join(researcher['interests'])
+                num_citations = researcher['citedby']
 
+                writer.writerow([guid, name, research_interests, university, num_citations])
+        logging.info('top %d researchers from %s dumped into csv file', NUM_RESEARCHERS, university)
     csv_file.close()
 
 
