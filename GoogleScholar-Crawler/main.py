@@ -51,7 +51,7 @@ def get_top_universities_of(country, topn, driver):
     table_element = WebDriverWait(driver, timeout=10).until(table_present)
     rows = table_element.find_elements(By.CSS_SELECTOR, value='tbody tr')
 
-    universities = list()
+    universities = []
     for row in rows:
         name_element = row.find_element(By.CSS_SELECTOR, value='td.name.namesearch a')
         univ_name = name_element.get_attribute(name='textContent')
@@ -84,6 +84,7 @@ def main():
         logging.info('university researchers found ...')
 
         counter = 0
+        rows_to_write = []
         for researcher in univ_researchers:
             if counter == NUM_RESEARCHERS: break
             if researcher['interests']:
@@ -93,8 +94,9 @@ def main():
                 # affiliation = researcher['affiliation']
                 research_interests = ', '.join(researcher['interests'])
                 num_citations = researcher['citedby']
+                rows_to_write.append([guid, name, research_interests, university, num_citations])
 
-                writer.writerow([guid, name, research_interests, university, num_citations])
+        writer.writerows(rows_to_write)
         logging.info('top %d researchers from %s dumped into csv file', NUM_RESEARCHERS, university)
     csv_file.close()
 
