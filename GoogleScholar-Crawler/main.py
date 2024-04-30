@@ -2,6 +2,7 @@ import csv
 import pycountry
 import logging
 
+from itertools import islice
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -14,7 +15,7 @@ CSV_FILE_PATH = './university_data.csv'
 CSV_HEADER = ['GUID', 'Name', 'Research Interests', 'University', 'Num Citations']
 COUNTRY_NAME = 'Canada'
 NUM_RESULTS = 2  # top ranked universities to crawl
-NUM_RESEARCHERS = 2000  # top cited researchers to crawl
+NUM_RESEARCHERS = 1000  # top cited researchers to crawl
 PROXY_IP = '23.23.23.23:3128'  # proxy ip for selenium driver
 
 logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s', level=logging.INFO)
@@ -84,7 +85,8 @@ def main():
         logging.info('university researchers found ...')
 
         counter = 0
-        for researcher in univ_researchers:
+        top_researchers = list(islice(univ_researchers, NUM_RESEARCHERS))
+        for researcher in top_researchers:
             if counter == NUM_RESEARCHERS: break
             if researcher['interests']:
                 counter += 1
