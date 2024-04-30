@@ -13,8 +13,8 @@ from scholarly import scholarly, ProxyGenerator
 CSV_FILE_PATH = './university_data.csv'
 CSV_HEADER = ['GUID', 'Name', 'Research Interests', 'University', 'Num Citations']
 COUNTRY_NAME = 'Canada'
-NUM_RESULTS = 5  # top ranked universities to crawl
-NUM_RESEARCHERS = 25  # top cited researchers to crawl
+NUM_RESULTS = 2  # top ranked universities to crawl
+NUM_RESEARCHERS = 2000  # top cited researchers to crawl
 PROXY_IP = '23.23.23.23:3128'  # proxy ip for selenium driver
 
 logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s', level=logging.INFO)
@@ -63,7 +63,7 @@ def get_top_universities_of(country, topn, driver):
 
 def initialize_scholarly_proxy():
     pg = ProxyGenerator()
-    pg.FreeProxies(timeout=1, wait_time=120)
+    # pg.FreeProxies(timeout=1, wait_time=120)
     scholarly.use_proxy(proxy_generator=pg, secondary_proxy_generator=pg)
 
 
@@ -84,7 +84,6 @@ def main():
         logging.info('university researchers found ...')
 
         counter = 0
-        rows_to_write = []
         for researcher in univ_researchers:
             if counter == NUM_RESEARCHERS: break
             if researcher['interests']:
@@ -93,10 +92,9 @@ def main():
                 name = researcher['name']
                 # affiliation = researcher['affiliation']
                 research_interests = ', '.join(researcher['interests'])
-                num_citations = researcher['citedby']
-                rows_to_write.append([guid, name, research_interests, university, num_citations])
+                num_citations = researcher['citedby'] if 'citedby' in researcher else 0
+                writer.writerow([guid, name, research_interests, university, num_citations])
 
-        writer.writerows(rows_to_write)
         logging.info('top %d researchers from %s dumped into csv file', NUM_RESEARCHERS, university)
     csv_file.close()
 
