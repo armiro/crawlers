@@ -14,8 +14,8 @@ from scholarly import scholarly, ProxyGenerator
 CSV_FILE_PATH = './university_data.csv'
 CSV_HEADER = ['GUID', 'Name', 'Research Interests', 'University', 'Num Citations']
 COUNTRY_NAME = 'Canada'
-NUM_RESULTS = 2  # top ranked universities to crawl
-NUM_RESEARCHERS = 1000  # top cited researchers to crawl
+NUM_RESULTS = 20  # top ranked universities to crawl
+NUM_RESEARCHERS = 2000  # top cited researchers to crawl
 PROXY_IP = '23.23.23.23:3128'  # proxy ip for selenium driver
 
 logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s', level=logging.INFO)
@@ -84,12 +84,9 @@ def main():
         univ_researchers = scholarly.search_author_by_organization(organization_id=int(univ_id))
         logging.info('university researchers found ...')
 
-        counter = 0
         top_researchers = list(islice(univ_researchers, NUM_RESEARCHERS))
         for researcher in top_researchers:
-            if counter == NUM_RESEARCHERS: break
             if researcher['interests']:
-                counter += 1
                 guid = researcher['scholar_id']
                 name = researcher['name']
                 # affiliation = researcher['affiliation']
