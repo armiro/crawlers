@@ -2,7 +2,6 @@ import csv
 import pycountry
 import logging
 
-from itertools import islice
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -64,7 +63,7 @@ def get_top_universities_of(country, topn, driver):
 
 def initialize_scholarly_proxy():
     pg = ProxyGenerator()
-    # pg.FreeProxies(timeout=1, wait_time=120)
+    pg.FreeProxies(timeout=1, wait_time=120)
     scholarly.use_proxy(proxy_generator=pg, secondary_proxy_generator=pg)
 
 
@@ -72,7 +71,6 @@ def main():
     driver = initialize_driver(use_proxy=False)
     logging.info('finding top %d universities in %s', NUM_RESULTS, COUNTRY_NAME)
     universities = get_top_universities_of(country=COUNTRY_NAME, topn=NUM_RESULTS, driver=driver)
-    # universities = ['University of Toronto']
 
     logging.info(universities)
     initialize_scholarly_proxy()
@@ -84,9 +82,11 @@ def main():
         univ_researchers = scholarly.search_author_by_organization(organization_id=int(univ_id))
         logging.info('university researchers found ...')
 
-        top_researchers = list(islice(univ_researchers, NUM_RESEARCHERS))
-        for researcher in top_researchers:
+        counter = 0
+        for researcher in univ_researchers:
+            if counter == NUM_RESEARCHERS: break
             if researcher['interests']:
+                counter += 1
                 guid = researcher['scholar_id']
                 name = researcher['name']
                 # affiliation = researcher['affiliation']
@@ -94,7 +94,7 @@ def main():
                 num_citations = researcher['citedby'] if 'citedby' in researcher else 0
                 writer.writerow([guid, name, research_interests, university, num_citations])
 
-        logging.info('top %d researchers from %s dumped into csv file', NUM_RESEARCHERS, university)
+        logging.info('top %d researchers from %s dumped into csv file', counter, university)
     csv_file.close()
 
 
